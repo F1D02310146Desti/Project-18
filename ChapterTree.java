@@ -1,40 +1,35 @@
 import java.util.Scanner;
-
-// ------------------------------- FEATURE JAKI START ----------------------------------
 public class ChapterTree {
-    // Node class buat nyimpen data user, kayak username, password, dan referensi ke node selanjutnya
+    
     static class Node {
         String username;
         String password;
         Node next;
-
+        int borrowedBooks; 
+    
         Node(String username, String password) {
             this.username = username;
             this.password = password;
             this.next = null;
+            this.borrowedBooks = 0; // Defaultnya 0 buku
         }
     }
 
     // 
     static Node head = null;
 
-    // Display header yang rapi dan ditengahin gitu
     public static void displayHeader(String title) {
-        int totalWidth = 40; // Lebar total buat display
-        int padding = (totalWidth - title.length()) / 2; // Cek berapa banyak spasi supaya title ditengah
+        int totalWidth = 40; 
+        int padding = (totalWidth - title.length()) / 2;
         String formattedTitle = " ".repeat(padding) + title;
 
         if (formattedTitle.length() < totalWidth) {
-            formattedTitle += " "; // Make sure it’s full width
+            formattedTitle += " ";
         }
-
-        // Nampilin header dengan garis-garis biar keliatan rapi
         System.out.println("+------------------------------------------+");
         System.out.printf("| %-" + totalWidth + "s |\n", formattedTitle);
         System.out.println("+------------------------------------------+");
     }
-
-    // Overload displayHeader buat dynamic message, title di tengah, message tengah juga
     public static void displayHeader(String title, String message) {
         int totalWidth = 40;
         int padding = (totalWidth - title.length()) / 2;
@@ -46,14 +41,144 @@ public class ChapterTree {
         if (formattedMessage.length() < totalWidth) {
             formattedMessage += " ";
         }
-
-        // Tampilkan header dan pesan
         System.out.println();
         System.out.println("+------------------------------------------+");
         System.out.printf("| %-" + totalWidth + "s |\n", formattedTitle);
         System.out.printf("| %-" + totalWidth + "s |\n", formattedMessage);
         System.out.println("+------------------------------------------+");
     }
+
+
+    // ------------------------------- FULL FUNGSI ADMIN DISINI ----------------------------------
+    // Node class untuk menyimpan tahun sebagai key utama dan linked list buku untuk setiap tahun
+    static class YearNode {
+        int year;
+        Book head; // Head dari linked list buku
+        YearNode left;
+        YearNode right;
+
+        YearNode(int year) {
+            this.year = year;
+            this.head = null;
+            this.left = null;
+            this.right = null;
+        }
+    }
+
+    // Node class untuk linked list buku
+    static class Book {
+        String title;
+        String genre;
+        String author;
+        Book next;
+
+        Book(String title, String genre, String author) {
+            this.title = title;
+            this.genre = genre;
+            this.author = author;
+            this.next = null;
+        }
+    }
+
+    static class Counter {
+        int value = 1;
+    }
+    static YearNode root = null;
+
+    public static void addBook(int year, String title, String genre, String author) {
+        root = insertYearNode(root, year, title, genre, author);
+    }
+
+    private static YearNode insertYearNode(YearNode current, int year, String title, String genre, String author) {
+        if (current == null) {
+            YearNode newYearNode = new YearNode(year);
+            newYearNode.head = new Book(title, genre, author);
+            return newYearNode;
+        }
+
+        if (year < current.year) {
+            current.left = insertYearNode(current.left, year, title, genre, author);
+        } else if (year > current.year) {
+            current.right = insertYearNode(current.right, year, title, genre, author);
+        } else {
+            // Tahun sudah ada, tambahkan buku ke linked list
+            Book newBook = new Book(title, genre, author);
+            Book temp = current.head;
+            while (temp.next != null) {
+                temp = temp.next;
+            }
+            temp.next = newBook;
+        }
+
+        return current;
+    }
+
+    // Display Buku gabungan dari semua tahun
+    public static void displayBooks(YearNode node) {
+        System.out.println();
+        System.out.println("+-----+-------------------------------+----------+-------------------+------------+");
+        System.out.println("| No  | Judul                         | Genre    | Author            | Tahun      |");
+        System.out.println("+-----+-------------------------------+----------+-------------------+------------+");
+        Counter counter = new Counter();
+        displayBooksInOrder(node, counter);
+        System.out.println("+-----+-------------------------------+----------+-------------------+------------+");
+    }
+
+    private static void displayBooksInOrder(YearNode node, Counter counter) {
+        if (node != null) {
+            displayBooksInOrder(node.left, counter);
+            Book temp = node.head; // Use a temporary pointer
+            while (temp != null) {
+                System.out.printf("| %-3d | %-29s | %-8s | %-17s | %-10d |%n", counter.value, temp.title, temp.genre, temp.author, node.year);
+                counter.value++;
+                temp = temp.next;
+            }
+            displayBooksInOrder(node.right, counter);
+        }
+    }
+
+    // Fitur Admin : 3. Display User Data
+    public static void displayUserData() {
+        if (head == null) {
+            System.out.println();
+            System.out.println("Tidak ada data user.");
+            return;
+        }
+        
+        System.out.println();
+        System.out.println("+-----+-------------------------------+---------------------+");
+        System.out.println("| No  | Username                      | Jumlah Buku         |");
+        System.out.println("+-----+-------------------------------+---------------------+");
+
+        Node current = head;
+        int counter = 1;
+
+        while (current != null) {
+            System.out.printf("| %-3d | %-29s | %-19d |%n", counter, current.username, current.borrowedBooks);
+            current = current.next;
+            counter++;
+        }
+
+        System.out.println("+-----+-------------------------------+---------------------+");
+    }
+    
+    public static void borrowBook(String username) {
+        Node current = head;
+        
+        while (current != null) {
+            if (current.username.equals(username)) {
+                System.out.println();
+                current.borrowedBooks++; // Tambah jumlah buku yang dipinjam
+                System.out.println("Buku berhasil dipinjam.");
+                return;
+            }
+            current = current.next;
+        }
+        System.out.println("User tidak ditemukan.");
+    }
+
+    // ------------------------------- FULL FUNGSI ADMIN DISINI ----------------------------------
+    
 
     // Yang Admin-Admin Aja (YAAAA), pilih-pilih fitur kayak tambah, hapus, edit buku
     public static void adminMenu(Scanner scanner) {
@@ -72,7 +197,18 @@ public class ChapterTree {
 
             switch (adminChoice) {
                 case 1:
-                    System.out.println("{FITUR COMING SOON}"); // Nanti ditambahin fiturnya
+                    System.out.print("Masukkan Tahun Buku: ");
+                    int year = scanner.nextInt();
+                    scanner.nextLine(); // Clear buffer
+                    System.out.print("Masukkan Judul Buku: ");
+                    String title = scanner.nextLine();
+                    System.out.print("Masukkan Genre Buku: ");
+                    String genre = scanner.nextLine();
+                    System.out.print("Masukkan Author Buku: ");
+                    String author = scanner.nextLine();
+                    addBook(year, title, genre, author);
+                    System.out.println();
+                    System.out.println("Buku berhasil ditambahkan.");
                     break;
                 case 2:
                     System.out.println("{FITUR COMING SOON}");
@@ -81,12 +217,17 @@ public class ChapterTree {
                     System.out.println("{FITUR COMING SOON}");
                     break;
                 case 4:
-                    System.out.println("{FITUR COMING SOON}");
+                if (root == null) {
+                    System.out.println("Tidak ada buku yang tersedia.");
+                    } else {
+                        displayBooks(root);
+                    }
                     break;
                 case 5:
-                    System.out.println("{FITUR COMING SOON}");
+                    displayUserData();
                     break;
                 case 6:
+                    System.out.println();
                     System.out.println("Logout berhasil.");
                     break;
                 default:
@@ -207,7 +348,7 @@ public class ChapterTree {
         }
         return false;
     }
-// ------------------------------- FEATURE JAKI END ----------------------------------
+
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         int mainChoice;
@@ -237,5 +378,6 @@ public class ChapterTree {
         } while (mainChoice != 3); // Exit kalo pilih 3
     }
 }
+
 
 
