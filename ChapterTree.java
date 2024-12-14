@@ -55,96 +55,6 @@ public class ChapterTree {
         System.out.println("+------------------------------------------+");
     }
 
-    // ------------------------------- FULL FUNGSI ADMIN DISINI ----------------------------------
-    // Node class untuk menyimpan tahun sebagai key utama dan linked list buku untuk setiap tahun
-    static class YearNode {
-        int year;
-        Book head; // Head dari linked list buku
-        YearNode left;
-        YearNode right;
-
-        YearNode(int year) {
-            this.year = year;
-            this.head = null;
-            this.left = null;
-            this.right = null;
-        }
-    }
-
-    // Node class untuk linked list buku
-    static class Book {
-        String title;
-        String genre;
-        String author;
-        Book next;
-
-        Book(String title, String genre, String author) {
-            this.title = title;
-            this.genre = genre;
-            this.author = author;
-            this.next = null;
-        }
-    }
-
-    static class Counter {
-        int value = 1;
-    }
-
-    static YearNode root = null;
-
-    public static void addBook(int year, String title, String genre, String author) {
-        root = insertYearNode(root, year, title, genre, author);
-    }
-
-    private static YearNode insertYearNode(YearNode current, int year, String title, String genre, String author) {
-        if (current == null) {
-            YearNode newYearNode = new YearNode(year);
-            newYearNode.head = new Book(title, genre, author);
-            return newYearNode;
-        }
-
-        if (year < current.year) {
-            current.left = insertYearNode(current.left, year, title, genre, author);
-        } else if (year > current.year) {
-            current.right = insertYearNode(current.right, year, title, genre, author);
-        } else {
-            // Tahun sudah ada, tambahkan buku ke linked list
-            Book newBook = new Book(title, genre, author);
-            Book temp = current.head;
-            while (temp.next != null) {
-                temp = temp.next;
-            }
-            temp.next = newBook;
-        }
-
-        return current;
-    }
-
-    // Display Buku gabungan dari semua tahun
-    public static void displayBooks(YearNode node) {
-        System.out.println("+-----+-------------------------------+----------+-------------------+------------+");
-        System.out.println("| No  | Judul                         | Genre    | Author            | Tahun      |");
-        System.out.println("+-----+-------------------------------+----------+-------------------+------------+");
-        Counter counter = new Counter();
-        displayBooksInOrder(node, counter);
-        System.out.println("+-----+-------------------------------+----------+-------------------+------------+");
-    }
-
-    private static void displayBooksInOrder(YearNode node, Counter counter) {
-        if (node != null) {
-            displayBooksInOrder(node.left, counter);
-            Book temp = node.head; // Use a temporary pointer
-            while (temp != null) {
-                System.out.printf("| %-3d | %-29s | %-8s | %-17s | %-10d |%n", counter.value, temp.title, temp.genre, temp.author, node.year);
-                counter.value++;
-                temp = temp.next;
-            }
-            displayBooksInOrder(node.right, counter);
-        }
-    }
-    // ------------------------------- FULL FUNGSI ADMIN DISINI ----------------------------------
-    
-
     // Yang Admin-Admin Aja (YAAAA), pilih-pilih fitur kayak tambah, hapus, edit buku
     public static void adminMenu(Scanner scanner) {
         int adminChoice;
@@ -162,17 +72,7 @@ public class ChapterTree {
 
             switch (adminChoice) {
                 case 1:
-                    System.out.print("Masukkan Tahun Buku: ");
-                    int year = scanner.nextInt();
-                    scanner.nextLine(); // Clear buffer
-                    System.out.print("Masukkan Judul Buku: ");
-                    String title = scanner.nextLine();
-                    System.out.print("Masukkan Genre Buku: ");
-                    String genre = scanner.nextLine();
-                    System.out.print("Masukkan Author Buku: ");
-                    String author = scanner.nextLine();
-                    addBook(year, title, genre, author);
-                    System.out.println("Buku berhasil ditambahkan.");
+                    System.out.println("{FITUR COMING SOON}"); // Nanti ditambahin fiturnya
                     break;
                 case 2:
                     System.out.println("{FITUR COMING SOON}");
@@ -181,11 +81,7 @@ public class ChapterTree {
                     System.out.println("{FITUR COMING SOON}");
                     break;
                 case 4:
-                if (root == null) {
-                    System.out.println("Tidak ada buku yang tersedia.");
-                    } else {
-                        displayBooks(root);
-                    }
+                    System.out.println("{FITUR COMING SOON}");
                     break;
                 case 5:
                     System.out.println("{FITUR COMING SOON}");
