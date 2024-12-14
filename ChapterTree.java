@@ -353,15 +353,18 @@ public class ChapterTree {
         performActionOnBook(node, searchTerm, currentCounter, choice, scanner, isDelete);
     }
 
-    private static void performActionOnBook(YearNode node, String searchTerm, Counter currentCounter, int choice, Scanner scanner, boolean isDelete) {
+    private static boolean performActionOnBook(YearNode node, String searchTerm, Counter currentCounter, int choice, Scanner scanner, boolean isDelete) {
         if (node != null) {
-            performActionOnBook(node.left, searchTerm, currentCounter, choice, scanner, isDelete);
+            if (performActionOnBook(node.left, searchTerm, currentCounter, choice, scanner, isDelete)) {
+                return true;
+            }
             Book temp = node.head;
+            Book prev = null; // Track previous book to correctly delete
             while (temp != null) {
                 if (temp.title.toLowerCase().contains(searchTerm.toLowerCase())) {
                     if (currentCounter.value == choice) {
                         if (isDelete) {
-                            deleteBook(temp, node);
+                            deleteBook(temp, prev, node);
                             System.out.println("Buku berhasil dihapus.");
                         } else {
                             System.out.println("Pilih data yang ingin diubah:");
@@ -395,7 +398,7 @@ public class ChapterTree {
                                     int newYear = scanner.nextInt();
                                     scanner.nextLine();
                                     addBook(newYear, temp.title, temp.genre, temp.author);
-                                    deleteBook(temp, node);
+                                    deleteBook(temp, prev, node);
                                     System.out.println("Tahun buku berhasil diubah.");
                                     break;
                                 case 5:
@@ -409,36 +412,32 @@ public class ChapterTree {
                                     int allNewYear = scanner.nextInt();
                                     scanner.nextLine();
                                     addBook(allNewYear, temp.title, temp.genre, temp.author);
-                                    deleteBook(temp, node);
+                                    deleteBook(temp, prev, node);
                                     System.out.println("Semua data buku berhasil diubah.");
                                     break;
                                 default:
                                     System.out.println("Pilihan tidak valid.");
                             }
                         }
-                        return;
+                        return true; // Stop further traversal
                     }
                     currentCounter.value++;
                 }
+                prev = temp;
                 temp = temp.next;
             }
-            performActionOnBook(node.right, searchTerm, currentCounter, choice, scanner, isDelete);
+            if (performActionOnBook(node.right, searchTerm, currentCounter, choice, scanner, isDelete)) {
+                return true;
+            }
         }
+        return false;
     }
 
-    private static void deleteBook(Book book, YearNode yearNode) {
-        Book current = yearNode.head;
-        if (current == book) {
-            yearNode.head = current.next;
-            return;
-        }
-
-        while (current != null && current.next != book) {
-            current = current.next;
-        }
-
-        if (current != null) {
-            current.next = book.next;
+    private static void deleteBook(Book book, Book prev, YearNode yearNode) {
+        if (prev == null) {
+            yearNode.head = book.next;
+        } else {
+            prev.next = book.next;
         }
     }
     // ------------------------------- FULL FUNGSI ADMIN DISINI ----------------------------------
