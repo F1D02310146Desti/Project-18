@@ -50,10 +50,9 @@ public class ChapterTree {
 
 
     // ------------------------------- FULL FUNGSI ADMIN DISINI ----------------------------------
-    // Node class untuk menyimpan tahun sebagai key utama dan linked list buku untuk setiap tahun
     static class YearNode {
         int year;
-        Book head; // Head dari linked list buku
+        Book head;
         YearNode left;
         YearNode right;
 
@@ -65,17 +64,27 @@ public class ChapterTree {
         }
     }
 
-    // Node class untuk linked list buku
     static class Book {
         String title;
         String genre;
         String author;
+        int year;
         Book next;
 
-        Book(String title, String genre, String author) {
+        Book(String title, String genre, String author, int year) {
             this.title = title;
             this.genre = genre;
             this.author = author;
+            this.year = year;
+            this.next = null;
+        }
+
+        // Buat simpen copyan dari linked list book
+        Book(Book book) {
+            this.title = book.title;
+            this.genre = book.genre;
+            this.author = book.author;
+            this.year = book.year;
             this.next = null;
         }
     }
@@ -92,7 +101,7 @@ public class ChapterTree {
     private static YearNode insertYearNode(YearNode current, int year, String title, String genre, String author) {
         if (current == null) {
             YearNode newYearNode = new YearNode(year);
-            newYearNode.head = new Book(title, genre, author);
+            newYearNode.head = new Book(title, genre, author, year);
             return newYearNode;
         }
 
@@ -102,7 +111,7 @@ public class ChapterTree {
             current.right = insertYearNode(current.right, year, title, genre, author);
         } else {
             // Tahun sudah ada, tambahkan buku ke linked list
-            Book newBook = new Book(title, genre, author);
+            Book newBook = new Book(title, genre, author, year);
             Book temp = current.head;
             while (temp.next != null) {
                 temp = temp.next;
@@ -113,30 +122,145 @@ public class ChapterTree {
         return current;
     }
 
-    // Display Buku gabungan dari semua tahun
+    // Fungsi buat tampilkan buku
     public static void displayBooks(YearNode node) {
-        System.out.println();
-        System.out.println("+-----+-------------------------------+----------+-------------------+------------+");
-        System.out.println("| No  | Judul                         | Genre    | Author            | Tahun      |");
-        System.out.println("+-----+-------------------------------+----------+-------------------+------------+");
+        System.out.println("Daftar Buku (Pre-order):");
+        System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
+        System.out.println("| No  | Judul                         | Genre       | Author            | Tahun      |");
+        System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
         Counter counter = new Counter();
-        displayBooksInOrder(node, counter);
-        System.out.println("+-----+-------------------------------+----------+-------------------+------------+");
+        displayBooksPreOrder(node, counter);
+        System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
     }
 
-    private static void displayBooksInOrder(YearNode node, Counter counter) {
+    private static void displayBooksPreOrder(YearNode node, Counter counter) {
         if (node != null) {
-            displayBooksInOrder(node.left, counter);
-            Book temp = node.head; // Use a temporary pointer
+            Book temp = node.head;
             while (temp != null) {
-                System.out.printf("| %-3d | %-29s | %-8s | %-17s | %-10d |%n", counter.value, temp.title, temp.genre, temp.author, node.year);
+                System.out.printf("| %-3d | %-29s | %-11s | %-17s | %-10d |%n", counter.value, temp.title, temp.genre, temp.author, temp.year);
                 counter.value++;
                 temp = temp.next;
             }
-            displayBooksInOrder(node.right, counter);
+            displayBooksPreOrder(node.left, counter);
+            displayBooksPreOrder(node.right, counter);
         }
     }
 
+    public static void sortAndDisplayBooks(Scanner scanner, boolean ascending) {
+        System.out.println("Pilih kriteria pengurutan:");
+        System.out.println("1. Judul");
+        System.out.println("2. Genre");
+        System.out.println("3. Author");
+        System.out.println("4. Tahun");
+        System.out.print("Pilih: ");
+        int sortChoice = scanner.nextInt();
+        scanner.nextLine();
+
+        Book tempList = createTempList(root);
+        tempList = mergeSort(tempList, sortChoice, ascending);
+
+        System.out.println("Daftar Buku (Setelah Pengurutan):");
+        System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
+        System.out.println("| No  | Judul                         | Genre       | Author            | Tahun      |");
+        System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
+
+        Counter counter = new Counter();
+        Book temp = tempList;
+        while (temp != null) {
+            System.out.printf("| %-3d | %-29s | %-11s | %-17s | %-10d |%n", counter.value, temp.title, temp.genre, temp.author, temp.year);
+            counter.value++;
+            temp = temp.next;
+        }
+
+        System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
+    }
+
+    private static Book createTempList(YearNode node) {
+        Book tempListHead = null;
+        Book tempListTail = null;
+
+        if (node != null) {
+            tempListHead = createTempList(node.left);
+            tempListTail = tempListHead;
+            while (tempListTail != null && tempListTail.next != null) {
+                tempListTail = tempListTail.next;
+            }
+
+            Book currentBook = node.head;
+            while (currentBook != null) {
+                Book copiedBook = new Book(currentBook);
+                if (tempListHead == null) {
+                    tempListHead = copiedBook;
+                    tempListTail = copiedBook;
+                } else {
+                    tempListTail.next = copiedBook;
+                    tempListTail = copiedBook;
+                }
+                currentBook = currentBook.next;
+            }
+
+            Book rightList = createTempList(node.right);
+            if (rightList != null) {
+                if (tempListHead == null) {
+                    tempListHead = rightList;
+                } else {
+                    tempListTail.next = rightList;
+                }
+            }
+        }
+
+        return tempListHead;
+    }
+
+    private static Book mergeSort(Book head, int sortChoice, boolean ascending) {
+        if (head == null || head.next == null) {
+            return head;
+        }
+
+        Book slow = head, fast = head.next;
+        while (fast != null && fast.next != null) {
+            slow = slow.next;
+            fast = fast.next.next;
+        }
+
+        Book middle = slow;
+        Book nextOfMiddle = middle.next;
+        middle.next = null;
+
+        Book left = mergeSort(head, sortChoice, ascending);
+        Book right = mergeSort(nextOfMiddle, sortChoice, ascending);
+
+        return sortedMerge(left, right, sortChoice, ascending);
+    }
+
+    private static Book sortedMerge(Book a, Book b, int sortChoice, boolean ascending) {
+        if (a == null) return b;
+        if (b == null) return a;
+
+        if ((compareBooks(a, b, sortChoice) <= 0) == ascending) {
+            a.next = sortedMerge(a.next, b, sortChoice, ascending);
+            return a;
+        } else {
+            b.next = sortedMerge(a, b.next, sortChoice, ascending);
+            return b;
+        }
+    }
+
+    private static int compareBooks(Book book1, Book book2, int sortChoice) {
+        switch (sortChoice) {
+            case 1: 
+                return book1.title.compareToIgnoreCase(book2.title);
+            case 2: 
+                return book1.genre.compareToIgnoreCase(book2.genre);
+            case 3: 
+                return book1.author.compareToIgnoreCase(book2.author);
+            case 4: 
+                return Integer.compare(book1.year, book2.year);
+            default: 
+                return 0;
+        }
+    }
+    
     // Fitur Admin : 3. Display User Data
     public static void displayUserData() {
         if (head == null) {
@@ -177,6 +301,145 @@ public class ChapterTree {
         System.out.println("User tidak ditemukan.");
     }
 
+    // Fungsi buat hapus sama delete buku
+    public static void searchAndEditOrDelete(Scanner scanner, String searchTerm, boolean isDelete) {
+        System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
+        System.out.println("| No  | Judul                         | Genre       | Author            | Tahun      |");
+        System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
+
+        Counter matchCounter = new Counter();
+        searchBooks(root, searchTerm, matchCounter);
+
+        if (matchCounter.value == 0) {
+            System.out.println("Tidak ada buku yang sesuai dengan kata kunci: " + searchTerm);
+            return;
+        }
+
+        System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
+        System.out.print("Pilih nomor buku yang ingin " + (isDelete ? "dihapus" : "diedit") + " (0 untuk kembali): ");
+        int choice = scanner.nextInt();
+        scanner.nextLine();
+
+        if (choice == 0) {
+            System.out.println("Kembali ke menu admin.");
+            return;
+        }
+
+        if (choice < 1 || choice > matchCounter.value) {
+            System.out.println("Pilihan tidak valid.");
+            return;
+        }
+
+        executeEditOrDelete(root, searchTerm, choice, scanner, isDelete);
+    }
+
+    private static void searchBooks(YearNode node, String searchTerm, Counter matchCounter) {
+        if (node != null) {
+            searchBooks(node.left, searchTerm, matchCounter);
+            Book temp = node.head;
+            while (temp != null) {
+                if (temp.title.toLowerCase().contains(searchTerm.toLowerCase())) {
+                    System.out.printf("| %-3d | %-29s | %-11s | %-17s | %-10d |%n", matchCounter.value, temp.title, temp.genre, temp.author, node.year);
+                    matchCounter.value++;
+                }
+                temp = temp.next;
+            }
+            searchBooks(node.right, searchTerm, matchCounter);
+        }
+    }
+
+    private static void executeEditOrDelete(YearNode node, String searchTerm, int choice, Scanner scanner, boolean isDelete) {
+        Counter currentCounter = new Counter();
+        performActionOnBook(node, searchTerm, currentCounter, choice, scanner, isDelete);
+    }
+
+    private static boolean performActionOnBook(YearNode node, String searchTerm, Counter currentCounter, int choice, Scanner scanner, boolean isDelete) {
+        if (node != null) {
+            if (performActionOnBook(node.left, searchTerm, currentCounter, choice, scanner, isDelete)) {
+                return true;
+            }
+            Book temp = node.head;
+            Book prev = null; // Track previous book to correctly delete
+            while (temp != null) {
+                if (temp.title.toLowerCase().contains(searchTerm.toLowerCase())) {
+                    if (currentCounter.value == choice) {
+                        if (isDelete) {
+                            deleteBook(temp, prev, node);
+                            System.out.println("Buku berhasil dihapus.");
+                        } else {
+                            System.out.println("Pilih data yang ingin diubah:");
+                            System.out.println("1. Ubah Judul Buku");
+                            System.out.println("2. Ubah Genre Buku");
+                            System.out.println("3. Ubah Author Buku");
+                            System.out.println("4. Ubah Tahun Buku");
+                            System.out.println("5. Ubah Semua Data");
+                            System.out.print("Pilih: ");
+                            int editChoice = scanner.nextInt();
+                            scanner.nextLine();
+
+                            switch (editChoice) {
+                                case 1:
+                                    System.out.print("Masukkan Judul Baru: ");
+                                    temp.title = scanner.nextLine();
+                                    System.out.println("Judul buku berhasil diubah.");
+                                    break;
+                                case 2:
+                                    System.out.print("Masukkan Genre Baru: ");
+                                    temp.genre = scanner.nextLine();
+                                    System.out.println("Genre buku berhasil diubah.");
+                                    break;
+                                case 3:
+                                    System.out.print("Masukkan Author Baru: ");
+                                    temp.author = scanner.nextLine();
+                                    System.out.println("Author buku berhasil diubah.");
+                                    break;
+                                case 4:
+                                    System.out.print("Masukkan Tahun Baru: ");
+                                    int newYear = scanner.nextInt();
+                                    scanner.nextLine();
+                                    addBook(newYear, temp.title, temp.genre, temp.author);
+                                    deleteBook(temp, prev, node);
+                                    System.out.println("Tahun buku berhasil diubah.");
+                                    break;
+                                case 5:
+                                    System.out.print("Masukkan Judul Baru: ");
+                                    temp.title = scanner.nextLine();
+                                    System.out.print("Masukkan Genre Baru: ");
+                                    temp.genre = scanner.nextLine();
+                                    System.out.print("Masukkan Author Baru: ");
+                                    temp.author = scanner.nextLine();
+                                    System.out.print("Masukkan Tahun Baru: ");
+                                    int allNewYear = scanner.nextInt();
+                                    scanner.nextLine();
+                                    addBook(allNewYear, temp.title, temp.genre, temp.author);
+                                    deleteBook(temp, prev, node);
+                                    System.out.println("Semua data buku berhasil diubah.");
+                                    break;
+                                default:
+                                    System.out.println("Pilihan tidak valid.");
+                            }
+                        }
+                        return true; // Stop further traversal
+                    }
+                    currentCounter.value++;
+                }
+                prev = temp;
+                temp = temp.next;
+            }
+            if (performActionOnBook(node.right, searchTerm, currentCounter, choice, scanner, isDelete)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void deleteBook(Book book, Book prev, YearNode yearNode) {
+        if (prev == null) {
+            yearNode.head = book.next;
+        } else {
+            prev.next = book.next;
+        }
+    }
     // ------------------------------- FULL FUNGSI ADMIN DISINI ----------------------------------
     
 
@@ -211,16 +474,38 @@ public class ChapterTree {
                     System.out.println("Buku berhasil ditambahkan.");
                     break;
                 case 2:
-                    System.out.println("{FITUR COMING SOON}");
+                    System.out.print("Masukkan kata kunci untuk mencari buku yang akan dihapus: ");
+                    String deleteTerm = scanner.nextLine();
+                    searchAndEditOrDelete(scanner, deleteTerm, true);
                     break;
                 case 3:
-                    System.out.println("{FITUR COMING SOON}");
+                    System.out.print("Masukkan kata kunci untuk mencari buku yang akan diedit: ");
+                    String editTerm = scanner.nextLine();
+                    searchAndEditOrDelete(scanner, editTerm, false);
                     break;
                 case 4:
                 if (root == null) {
                     System.out.println("Tidak ada buku yang tersedia.");
                     } else {
                         displayBooks(root);
+                        while (true) { 
+                            System.out.println("Pilih opsi pengurutan:");
+                            System.out.println("0. Kembali");
+                            System.out.println("1. Urutkan Ascending");
+                            System.out.println("2. Urutkan Descending");
+                            System.out.print("Pilih: ");
+                            int sortOption = scanner.nextInt();
+                            scanner.nextLine();
+                            if (sortOption == 1) {
+                                sortAndDisplayBooks(scanner, true);
+                            } else if (sortOption == 2) {
+                                sortAndDisplayBooks(scanner, false);
+                            } else if (sortOption == 0) {
+                                break;
+                            } else {
+                                System.out.println("Pilihan tidak valid.");
+                            }
+                        }
                     }
                     break;
                 case 5:
@@ -352,6 +637,12 @@ public class ChapterTree {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         int mainChoice;
+        
+        // buat debugging aja ini, biar langsung ada data bukunya :v
+        addBook(2020, "Percobaan Pertama", "Fantasy", "Coba");
+        addBook(2021, "Buku Keren", "Science", "Buku Keren");
+        addBook(2000, "Unram", "Science", "Chapter");
+        addBook(2001, "Senja", "Non Fiksi", "Tree");
 
         do {
             displayHeader("Selamat datang di ChapterTree!");
@@ -378,6 +669,3 @@ public class ChapterTree {
         } while (mainChoice != 3); // Exit kalo pilih 3
     }
 }
-
-
-
