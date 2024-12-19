@@ -6,7 +6,7 @@ public class ChapterTree {
         String password;
         Node next;
         int borrowedBooks;
-        Book borrowedBookList; // Head of linked list for borrowed books
+        Book borrowedBookList;
 
         Node(String username, String password) {
             this.username = username;
@@ -15,6 +15,60 @@ public class ChapterTree {
             this.borrowedBooks = 0;
             this.borrowedBookList = null;
         }
+    }
+
+    static class BorrowQueue {
+        String username;
+        String bookTitle;
+        BorrowQueue next;
+
+        BorrowQueue(String username, String bookTitle) {
+            this.username = username;
+            this.bookTitle = bookTitle;
+            this.next = null;
+        }
+    }
+
+    static BorrowQueue borrowQueueFront = null;
+    static BorrowQueue borrowQueueRear = null;
+
+    static class BorrowHistory {
+        String username;
+        String bookTitle;
+        BorrowHistory next;
+
+        BorrowHistory(String username, String bookTitle) {
+            this.username = username;
+            this.bookTitle = bookTitle;
+            this.next = null;
+        }
+    }
+
+    static class ReturnHistory {
+        String username;
+        String bookTitle;
+        ReturnHistory next;
+
+        ReturnHistory(String username, String bookTitle) {
+            this.username = username;
+            this.bookTitle = bookTitle;
+            this.next = null;
+        }
+    }
+
+    static BorrowHistory borrowHistoryTop = null;
+    static ReturnHistory historyTop = null;
+
+    public static void pushReturnHistory(String username, String bookTitle) {
+        ReturnHistory newHistory = new ReturnHistory(username, bookTitle);
+        newHistory.next = historyTop;
+        historyTop = newHistory;
+    }
+
+    public static void pushBorrowHistory(String username, String bookTitle) {
+        BorrowHistory newHistory = new BorrowHistory(username, bookTitle);
+        newHistory.next = borrowHistoryTop;
+        borrowHistoryTop = newHistory;
     }
 
     static Node head = null;
@@ -275,7 +329,6 @@ public class ChapterTree {
         }
     }
     
-    // Fitur Admin : 3. Display User Data
     public static void displayUserData() {
         if (head == null) {
             System.out.println();
@@ -300,7 +353,6 @@ public class ChapterTree {
         System.out.println("+-----+-------------------------------+---------------------+");
     }
 
-    // Fungsi buat hapus sama delete buku
     public static void searchAndEditOrDelete(Scanner scanner, String searchTerm, boolean isDelete) {
         System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
         System.out.println("| No  | Judul                         | Genre       | Author            | Tahun      |");
@@ -358,7 +410,7 @@ public class ChapterTree {
                 return true;
             }
             Book temp = node.head;
-            Book prev = null; // Track previous book to correctly delete
+            Book prev = null;
             while (temp != null) {
                 if (temp.title.toLowerCase().contains(searchTerm.toLowerCase())) {
                     if (currentCounter.value == choice) {
@@ -418,7 +470,7 @@ public class ChapterTree {
                                     System.out.println("Pilihan tidak valid.");
                             }
                         }
-                        return true; // Stop further traversal
+                        return true;
                     }
                     currentCounter.value++;
                 }
@@ -439,7 +491,136 @@ public class ChapterTree {
             prev.next = book.next;
         }
     }
-    // ------------------------------- FULL FUNGSI ADMIN DISINI ----------------------------------
+
+    public static void displayReturnHistory() {
+        if (historyTop == null) {
+            System.out.println("Tidak ada history pengembalian buku dari user.");
+            return;
+        }
+
+        System.out.println("+-----+-------------------------------+-------------------+");
+        System.out.println("| No  | User                          | Judul Buku        |");
+        System.out.println("+-----+-------------------------------+-------------------+");
+
+        ReturnHistory temp = historyTop;
+        int counter = 1;
+        while (temp != null) {
+            System.out.printf("| %-3d | %-29s | %-17s |%n", counter, temp.username, temp.bookTitle);
+            counter++;
+            temp = temp.next;
+        }
+
+        System.out.println("+-----+-------------------------------+-------------------+");
+    }
+
+    public static void displayBorrowHistory() {
+        if (borrowHistoryTop == null) {
+            System.out.println("Tidak ada history peminjaman buku.");
+            return;
+        }
+
+        System.out.println("+-----+-------------------------------+-------------------+");
+        System.out.println("| No  | User                          | Judul Buku        |");
+        System.out.println("+-----+-------------------------------+-------------------+");
+
+        BorrowHistory temp = borrowHistoryTop;
+        int counter = 1;
+        while (temp != null) {
+            System.out.printf("| %-3d | %-29s | %-17s |%n", counter, temp.username, temp.bookTitle);
+            counter++;
+            temp = temp.next;
+        }
+
+        System.out.println("+-----+-------------------------------+-------------------+");
+    }
+
+    public static void processBorrowQueue() {
+        if (borrowQueueFront == null) {
+            System.out.println("Tidak ada permintaan peminjaman di antrian.");
+            return;
+        }
+
+        System.out.println("Daftar Antrian Peminjaman Buku:");
+        System.out.println("+-----+-------------------------------+-------------------+");
+        System.out.println("| No  | Username                      | Judul Buku        |");
+        System.out.println("+-----+-------------------------------+-------------------+");
+
+        BorrowQueue temp = borrowQueueFront;
+        int counter = 1;
+        while (temp != null) {
+            System.out.printf("| %-3d | %-29s | %-17s |%n", counter, temp.username, temp.bookTitle);
+            counter++;
+            temp = temp.next;
+        }
+
+        System.out.println("+-----+-------------------------------+-------------------+");
+        System.out.print("Masukkan nomor antrian yang ingin dikonfirmasi (0 untuk kembali): ");
+
+        Scanner scanner = new Scanner(System.in);
+        int choice = scanner.nextInt();
+        scanner.nextLine();
+
+        if (choice == 0) {
+            System.out.println("Kembali ke menu admin.");
+            return;
+        }
+
+        BorrowQueue previous = null;
+        temp = borrowQueueFront;
+        counter = 1;
+
+        while (temp != null) {
+            if (counter == choice) {
+                System.out.println("Memproses permintaan peminjaman untuk pengguna: " + temp.username);
+                Node user = findUser(temp.username);
+                if (user != null) {
+                    confirmBorrow(user, temp.bookTitle);
+                } else {
+                    System.out.println("Pengguna tidak ditemukan.");
+                }
+
+                if (previous == null) {
+                    borrowQueueFront = temp.next;
+                } else {
+                    previous.next = temp.next;
+                }
+
+                if (temp == borrowQueueRear) {
+                    borrowQueueRear = previous;
+                }
+                System.out.println("Permintaan berhasil dikonfirmasi.");
+                return;
+            }
+            previous = temp;
+            temp = temp.next;
+            counter++;
+        }
+
+        System.out.println("Nomor antrian tidak valid.");
+    }
+
+    public static void confirmBorrow(Node user, String bookTitle) {
+        Book book = findBookByTitle(root, bookTitle);
+        if (book == null) {
+            System.out.println("Buku tidak ditemukan.");
+            return;
+        }
+
+        Book borrowedBook = new Book(book);
+        if (user.borrowedBookList == null) {
+            user.borrowedBookList = borrowedBook;
+        } else {
+            Book temp = user.borrowedBookList;
+            while (temp.next != null) {
+                temp = temp.next;
+            }
+            temp.next = borrowedBook;
+        }
+        user.borrowedBooks++;
+        System.out.println("Buku \"" + bookTitle + "\" berhasil dipinjam oleh pengguna: " + user.username);
+        pushBorrowHistory(user.username, bookTitle);
+    }
+    // ------------------------------- AKHIR FUNGSI ADMIN DISINI ----------------------------------
     
 
     // Yang Admin-Admin Aja (YAAAA), pilih-pilih fitur kayak tambah, hapus, edit buku
@@ -450,18 +631,21 @@ public class ChapterTree {
             System.out.println("1. Tambah Buku");
             System.out.println("2. Hapus Buku");
             System.out.println("3. Edit Buku");
-            System.out.println("4. Display List Buku");
-            System.out.println("5. Display Data User");
-            System.out.println("6. Logout");
+            System.out.println("4. Konfirmasi Peminjaman");
+            System.out.println("5. Tampilkan List Buku");
+            System.out.println("6. Tampilkan Data User");
+            System.out.println("7. Tampilkan Riwayat Peminjaman Buku");
+            System.out.println("8. Tampilkan Riwayat Pengembalian Buku");
+            System.out.println("9. Logout");
             System.out.print("Pilih menu: ");
             adminChoice = scanner.nextInt();
-            scanner.nextLine(); // Clear buffer
+            scanner.nextLine();
 
             switch (adminChoice) {
                 case 1:
                     System.out.print("Masukkan Tahun Buku: ");
                     int year = scanner.nextInt();
-                    scanner.nextLine(); // Clear buffer
+                    scanner.nextLine();
                     System.out.print("Masukkan Judul Buku: ");
                     String title = scanner.nextLine();
                     System.out.print("Masukkan Genre Buku: ");
@@ -483,6 +667,9 @@ public class ChapterTree {
                     searchAndEditOrDelete(scanner, editTerm, false);
                     break;
                 case 4:
+                    processBorrowQueue();
+                    break;
+                case 5:
                 if (root == null) {
                     System.out.println("Tidak ada buku yang tersedia.");
                     } else {
@@ -507,17 +694,23 @@ public class ChapterTree {
                         }
                     }
                     break;
-                case 5:
+                case 6:
                     displayUserData();
                     break;
-                case 6:
+                case 7:
+                    displayBorrowHistory();
+                    break;
+                case 8:
+                    displayReturnHistory();
+                    break;
+                case 9:
                     System.out.println();
                     System.out.println("Logout berhasil.");
                     break;
                 default:
                     System.out.println("Pilihan gak valid. Coba lagi.");
             }
-        } while (adminChoice != 6); // Exit klo pilih logout
+        } while (adminChoice != 9); // Exit klo pilih logout
     }
 
     // ------------------------------- AWAL FUNGSI USER DISINI ----------------------------------
@@ -531,24 +724,7 @@ public class ChapterTree {
     }
 
     public static void borrowBook(Node user, String bookTitle) {
-        Book book = findBookByTitle(root, bookTitle);
-        if (book == null) {
-            System.out.println("Buku tidak ditemukan.");
-            return;
-        }
-
-        Book borrowedBook = new Book(book); // Create a copy of the book
-        if (user.borrowedBookList == null) {
-            user.borrowedBookList = borrowedBook;
-        } else {
-            Book temp = user.borrowedBookList;
-            while (temp.next != null) {
-                temp = temp.next;
-            }
-            temp.next = borrowedBook;
-        }
-        user.borrowedBooks++;
-        System.out.println("Buku berhasil dipinjam.");
+        enqueueBorrowRequest(user.username, bookTitle); // Tambahkan ke antrian
     }
 
     public static void searchBook(Scanner scanner) {
@@ -572,39 +748,21 @@ public class ChapterTree {
     
     private static Book linearSearch(YearNode node, String title) {
         if (node != null) {
-            // Search in left subtree
             Book foundInLeft = linearSearch(node.left, title);
             if (foundInLeft != null) return foundInLeft;
     
-            // Search in the current year's book list
             Book temp = node.head;
             while (temp != null) {
                 if (temp.title.equalsIgnoreCase(title)) {
-                    return temp; // Return the found book
+                    return temp;
                 }
                 temp = temp.next;
             }
     
-            // Search in right subtree
             Book foundInRight = linearSearch(node.right, title);
             if (foundInRight != null) return foundInRight;
         }
-        return null; // Book not found
-    }
-
-    private static boolean linearSearchAndBorrow(YearNode node, String title) {
-        if (node != null) {
-            if (linearSearchAndBorrow(node.left, title)) return true;
-            Book temp = node.head;
-            while (temp != null) {
-                if (temp.title.equalsIgnoreCase(title)) {
-                    return true;
-                }
-                temp = temp.next;
-            }
-            if (linearSearchAndBorrow(node.right, title)) return true;
-        }
-        return false;
+        return null;
     }
 
     private static Node findUser(String username) {
@@ -655,6 +813,47 @@ public class ChapterTree {
 
         System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
     }
+
+    public static void returnBook(Node user, int bookNumber) {
+        if (user.borrowedBookList == null) {
+            System.out.println("Tidak ada buku yang dipinjam.");
+            return;
+        }
+
+        Book temp = user.borrowedBookList;
+        Book prev = null;
+        Counter counter = new Counter();
+
+        while (temp != null) {
+            if (counter.value == bookNumber) {
+                if (prev == null) {
+                    user.borrowedBookList = temp.next;
+                } else {
+                    prev.next = temp.next;
+                }
+                user.borrowedBooks--;
+                System.out.println("Buku berhasil dikembalikan.");
+                pushReturnHistory(user.username, temp.title);
+                return;
+            }
+            counter.value++;
+            prev = temp;
+            temp = temp.next;
+        }
+
+        System.out.println("Nomor buku tidak valid.");
+    }
+
+    public static void enqueueBorrowRequest(String username, String bookTitle) {
+        BorrowQueue newRequest = new BorrowQueue(username, bookTitle);
+        if (borrowQueueRear == null) {
+            borrowQueueFront = borrowQueueRear = newRequest;
+        } else {
+            borrowQueueRear.next = newRequest;
+            borrowQueueRear = newRequest;
+        }
+        System.out.println("Permintaan peminjaman ditambahkan ke antrian.");
+    }
     // ------------------------------- AKHIR FUNGSI USER DISINI ----------------------------------
 
     // Menu buat user biasa (rakyat jelata), bisa pinjam buku atau cari buku
@@ -665,11 +864,13 @@ public class ChapterTree {
             System.out.println("Silahkan memilih menu :");
             System.out.println("1. Pinjam buku");
             System.out.println("2. Cari buku");
-            System.out.println("3. Display list buku yang dipinjam");
-            System.out.println("4. Logout");
+            System.out.println("3. Tampilkan buku yang dipinjam");
+            System.out.println("4. Kembalikan Buku");
+            System.out.println("5. Logout");
+            System.out.println();
             System.out.print("Pilih menu: ");
             userChoice = scanner.nextInt();
-            scanner.nextLine(); // Clear buffer
+            scanner.nextLine();
 
             switch (userChoice) {
                 case 1:
@@ -685,12 +886,23 @@ public class ChapterTree {
                     displayBorrowedBooks(user);
                     break;
                 case 4:
+                    if (user.borrowedBookList == null) {
+                        System.out.println("Tidak ada buku yang dipinjam.");
+                    } else {
+                        displayBorrowedBooks(user);
+                        System.out.print("Masukkan nomor buku yang ingin dikembalikan: ");
+                        int bookNumber = scanner.nextInt();
+                        scanner.nextLine();
+                        returnBook(user, bookNumber);
+                    }
+                    break;
+                case 5:
                     System.out.println("Logout berhasil.");
                     break;
                 default:
                     System.out.println("Pilihan gak valid. Coba lagi.");
             }
-        } while (userChoice != 4); // Keluar kalau logout
+        } while (userChoice != 5); // Keluar kalau logout
     }
 
     // Fungsi buat registrasi user baru
@@ -801,7 +1013,7 @@ public class ChapterTree {
                     signIn(scanner); // Panggil fungsi sign in
                     break;
                 case 3:
-                    System.out.println("Terima kasih telah menggunakan ChapterTree!"); // Exit message
+                    System.out.println("Terima kasih telah menggunakan ChapterTree!");
                     break;
                 default:
                     System.out.println("Pilihan gak valid.");
