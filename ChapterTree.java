@@ -5,13 +5,15 @@ public class ChapterTree {
         String username;
         String password;
         Node next;
-        int borrowedBooks; 
-    
+        int borrowedBooks;
+        Book borrowedBookList; // Head of linked list for borrowed books
+
         Node(String username, String password) {
             this.username = username;
             this.password = password;
             this.next = null;
-            this.borrowedBooks = 0; // Defaultnya 0 buku
+            this.borrowedBooks = 0;
+            this.borrowedBookList = null;
         }
     }
 
@@ -150,7 +152,7 @@ public class ChapterTree {
             displayBooksInOrder(node.left, counter);
             Book temp = node.head;
             while (temp != null) {
-                System.out.printf("| %-3d | %-29s | %-8s | %-17s | %-10d |%n", counter.value, temp.title, temp.genre, temp.author, node.year);
+                System.out.printf("| %-3d | %-29s | %-11s | %-17s | %-10d |%n", counter.value, temp.title, temp.genre, temp.author, node.year);
                 counter.value++;
                 temp = temp.next;
             }
@@ -296,27 +298,6 @@ public class ChapterTree {
         }
 
         System.out.println("+-----+-------------------------------+---------------------+");
-    }
-    
-    public static void borrowBook(Scanner scanner, String username) {
-        displayBooks(root);
-        System.out.println();
-        System.out.print("Masukkan judul buku yang ingin dipinjam: ");
-        String title = scanner.nextLine();
-
-        if (linearSearchAndBorrow(root, title)) {
-            Node current = head;
-            while (current != null) {
-                if (current.username.equals(username)) {
-                    current.borrowedBooks++;
-                    System.out.println("Buku berhasil dipinjam.");
-                    return;
-                }
-                current = current.next;
-            }
-        } else {
-            System.out.println("Buku tidak ditemukan.");
-        }
     }
 
     // Fungsi buat hapus sama delete buku
@@ -539,8 +520,146 @@ public class ChapterTree {
         } while (adminChoice != 6); // Exit klo pilih logout
     }
 
+    // ------------------------------- AWAL FUNGSI USER DISINI ----------------------------------
+    public static void displayAllBooks() {
+        System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
+        System.out.println("| No  | Judul                         | Genre       | Author            | Tahun      |");
+        System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
+        Counter counter = new Counter();
+        displayBooksInOrder(root, counter);
+        System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
+    }
+
+    public static void borrowBook(Node user, String bookTitle) {
+        Book book = findBookByTitle(root, bookTitle);
+        if (book == null) {
+            System.out.println("Buku tidak ditemukan.");
+            return;
+        }
+
+        Book borrowedBook = new Book(book); // Create a copy of the book
+        if (user.borrowedBookList == null) {
+            user.borrowedBookList = borrowedBook;
+        } else {
+            Book temp = user.borrowedBookList;
+            while (temp.next != null) {
+                temp = temp.next;
+            }
+            temp.next = borrowedBook;
+        }
+        user.borrowedBooks++;
+        System.out.println("Buku berhasil dipinjam.");
+    }
+
+    public static void searchBook(Scanner scanner) {
+        System.out.print("Masukkan judul buku yang ingin dicari: ");
+        String title = scanner.nextLine();
+    
+        Book foundBook = linearSearch(root, title);
+        if (foundBook != null) {
+            System.out.println("Buku ditemukan.");
+            System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
+            System.out.printf("| %-3s | %-29s | %-11s | %-17s | %-10s |\n", 
+                              "No", "Judul", "Genre", "Author", "Tahun");
+            System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
+            System.out.printf("| %-3d | %-29s | %-11s | %-17s | %-10d |\n", 
+                              1, foundBook.title, foundBook.genre, foundBook.author, foundBook.year);
+            System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
+        } else {
+            System.out.println("Buku tidak ditemukan.");
+        }
+    }
+    
+    private static Book linearSearch(YearNode node, String title) {
+        if (node != null) {
+            // Search in left subtree
+            Book foundInLeft = linearSearch(node.left, title);
+            if (foundInLeft != null) return foundInLeft;
+    
+            // Search in the current year's book list
+            Book temp = node.head;
+            while (temp != null) {
+                if (temp.title.equalsIgnoreCase(title)) {
+                    return temp; // Return the found book
+                }
+                temp = temp.next;
+            }
+    
+            // Search in right subtree
+            Book foundInRight = linearSearch(node.right, title);
+            if (foundInRight != null) return foundInRight;
+        }
+        return null; // Book not found
+    }
+
+    private static boolean linearSearchAndBorrow(YearNode node, String title) {
+        if (node != null) {
+            if (linearSearchAndBorrow(node.left, title)) return true;
+            Book temp = node.head;
+            while (temp != null) {
+                if (temp.title.equalsIgnoreCase(title)) {
+                    return true;
+                }
+                temp = temp.next;
+            }
+            if (linearSearchAndBorrow(node.right, title)) return true;
+        }
+        return false;
+    }
+
+    private static Node findUser(String username) {
+        Node current = head;
+        while (current != null) {
+            if (current.username.equals(username)) {
+                return current;
+            }
+            current = current.next;
+        }
+        return null;
+    }
+
+    private static Book findBookByTitle(YearNode node, String title) {
+        if (node == null) return null;
+
+        Book temp = node.head;
+        while (temp != null) {
+            if (temp.title.equalsIgnoreCase(title)) {
+                return temp;
+            }
+            temp = temp.next;
+        }
+
+        Book leftResult = findBookByTitle(node.left, title);
+        if (leftResult != null) return leftResult;
+
+        return findBookByTitle(node.right, title);
+    }
+
+    public static void displayBorrowedBooks(Node user) {
+        if (user.borrowedBookList == null) {
+            System.out.println("Tidak ada buku yang dipinjam.");
+            return;
+        }
+
+        System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
+        System.out.println("| No  | Judul                         | Genre       | Author            | Tahun      |");
+        System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
+
+        Book temp = user.borrowedBookList;
+        Counter counter = new Counter();
+        while (temp != null) {
+            System.out.printf("| %-3d | %-29s | %-11s | %-17s | %-10d |%n", counter.value, temp.title, temp.genre, temp.author, temp.year);
+            counter.value++;
+            temp = temp.next;
+        }
+
+        System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
+    }
+    // ------------------------------- AKHIR FUNGSI USER DISINI ----------------------------------
+
     // Menu buat user biasa (rakyat jelata), bisa pinjam buku atau cari buku
     public static void userMenu(Scanner scanner, String username) {
+        Node user = findUser(username);
         int userChoice;
         do {
             System.out.println("Silahkan memilih menu :");
@@ -554,13 +673,16 @@ public class ChapterTree {
 
             switch (userChoice) {
                 case 1:
-                    borrowBook(scanner, username);
+                    displayAllBooks();
+                    System.out.print("Masukkan judul buku yang ingin dipinjam: ");
+                    String bookTitle = scanner.nextLine();
+                    borrowBook(user, bookTitle);
                     break;
                 case 2:
                     searchBook(scanner);
                     break;
                 case 3:
-                    System.out.println("{FITUR COMING SOON}");
+                    displayBorrowedBooks(user);
                     break;
                 case 4:
                     System.out.println("Logout berhasil.");
@@ -650,64 +772,7 @@ public class ChapterTree {
             current = current.next;
         }
         return false;
-    }   
-
-    private static boolean linearSearchAndBorrow(YearNode node, String title) {
-        if (node != null) {
-            if (linearSearchAndBorrow(node.left, title)) return true;
-            Book temp = node.head;
-            while (temp != null) {
-                if (temp.title.equalsIgnoreCase(title)) {
-                    return true;
-                }
-                temp = temp.next;
-            }
-            if (linearSearchAndBorrow(node.right, title)) return true;
-        }
-        return false;
     }
-    public static void searchBook(Scanner scanner) {
-        System.out.print("Masukkan judul buku yang ingin dicari: ");
-        String title = scanner.nextLine();
-    
-        Book foundBook = linearSearch(root, title);
-        if (foundBook != null) {
-            System.out.println("Buku ditemukan.");
-            System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
-            System.out.printf("| %-3s | %-29s | %-11s | %-17s | %-10s |\n", 
-                              "No", "Judul", "Genre", "Author", "Tahun");
-            System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
-            System.out.printf("| %-3d | %-29s | %-11s | %-17s | %-10d |\n", 
-                              1, foundBook.title, foundBook.genre, foundBook.author, foundBook.year);
-            System.out.println("+-----+-------------------------------+-------------+-------------------+------------+");
-        } else {
-            System.out.println("Buku tidak ditemukan.");
-        }
-    }
-    
-    private static Book linearSearch(YearNode node, String title) {
-        if (node != null) {
-            // Search in left subtree
-            Book foundInLeft = linearSearch(node.left, title);
-            if (foundInLeft != null) return foundInLeft;
-    
-            // Search in the current year's book list
-            Book temp = node.head;
-            while (temp != null) {
-                if (temp.title.equalsIgnoreCase(title)) {
-                    return temp; // Return the found book
-                }
-                temp = temp.next;
-            }
-    
-            // Search in right subtree
-            Book foundInRight = linearSearch(node.right, title);
-            if (foundInRight != null) return foundInRight;
-        }
-        return null; // Book not found
-    }
-    
-
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
